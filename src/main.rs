@@ -19,7 +19,7 @@ fn determine_new_layout(old: &str) -> &str {
 
 fn with_query_layout(f: fn(&str)) {
     let out = Command::new("setxkbmap").arg("-query").output().unwrap();
-    let s = String::from_utf8(out.stdout).unwrap();
+    let s = std::str::from_utf8(&out.stdout).unwrap();
     let layout_idx = s.find("layout:").unwrap() + 7;
     let layout = s[layout_idx..].trim();
     f(layout)
