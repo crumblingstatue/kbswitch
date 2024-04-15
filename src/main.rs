@@ -2,6 +2,7 @@
 //! Primary purpose is to be invoked by shortcut (e.g. by window manager)
 
 #![no_main]
+#![feature(array_windows)]
 
 use std::{
     ffi::OsStr,
@@ -51,10 +52,8 @@ fn trim_bytestring(bs: &[u8]) -> &[u8] {
     &bs[begin..end]
 }
 
-fn memmem(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
+fn memmem(haystack: &[u8], needle: &[u8; 7]) -> Option<usize> {
+    haystack.array_windows().position(|window| window == needle)
 }
 
 fn with_query_layout(f: fn(&[u8])) {
