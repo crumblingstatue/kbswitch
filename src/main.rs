@@ -52,7 +52,7 @@ fn trim_bytestring(bs: &[u8]) -> &[u8] {
     &bs[begin..end]
 }
 
-fn memmem(haystack: &[u8], needle: &[u8; 7]) -> Option<usize> {
+fn memmem<const N: usize>(haystack: &[u8], needle: &[u8; N]) -> Option<usize> {
     haystack.array_windows().position(|window| window == needle)
 }
 
