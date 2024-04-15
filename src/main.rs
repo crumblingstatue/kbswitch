@@ -3,7 +3,11 @@
 
 #![no_main]
 
-use std::{os::unix::process::CommandExt, process::Command};
+use std::{
+    ffi::OsStr,
+    os::unix::{ffi::OsStrExt, process::CommandExt},
+    process::Command,
+};
 
 #[no_mangle]
 fn main() {
@@ -13,28 +17,60 @@ fn main() {
 }
 
 /// This is where the layout switching behavior can be configured
-fn determine_new_layout(old: &str) -> &str {
+fn determine_new_layout(old: &[u8]) -> &[u8] {
     match old {
-        "us" => "hu",
-        _ => "us",
+        b"us" => b"hu",
+        _ => b"us",
     }
 }
 
-fn with_query_layout(f: fn(&str)) {
+fn trim_bytestring(bs: &[u8]) -> &[u8] {
+    let mut begin = 0;
+    let mut end = 0;
+    enum State {
+        Init,
+        Meat,
+    }
+    let mut state = State::Init;
+    for (i, byte) in bs.iter().enumerate() {
+        match state {
+            State::Init => {
+                if !byte.is_ascii_whitespace() {
+                    state = State::Meat;
+                    begin = i;
+                }
+            }
+            State::Meat => {
+                if byte.is_ascii_whitespace() {
+                    end = i;
+                    break;
+                }
+            }
+        }
+    }
+    &bs[begin..end]
+}
+
+fn memmem(haystack: &[u8], needle: &[u8]) -> Option<usize> {
+    haystack
+        .windows(needle.len())
+        .position(|window| window == needle)
+}
+
+fn with_query_layout(f: fn(&[u8])) {
     let Ok(out) = Command::new("setxkbmap").arg("-query").output() else {
         return;
     };
-    let Ok(s) = std::str::from_utf8(&out.stdout) else {
-        return;
-    };
-    let Some(layout_idx) = s.find("layout:") else {
+    let Some(layout_idx) = memmem(&out.stdout, b"layout:") else {
         return;
     };
     let layout_idx = layout_idx + 7;
-    let layout = s[layout_idx..].trim();
+    let layout = trim_bytestring(&out.stdout[layout_idx..]);
     f(layout)
 }
 
-fn set_layout(layout: &str) {
-    let _ = Command::new("setxkbmap").arg(layout).exec();
+fn set_layout(layout: &[u8]) {
+    let _ = Command::new("setxkbmap")
+        .arg(<OsStr as OsStrExt>::from_bytes(layout))
+        .exec();
 }
