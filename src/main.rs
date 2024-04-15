@@ -3,7 +3,7 @@
 
 #![no_main]
 
-use std::process::Command;
+use std::{os::unix::process::CommandExt, process::Command};
 
 #[no_mangle]
 fn main() {
@@ -36,5 +36,5 @@ fn with_query_layout(f: fn(&str)) {
 }
 
 fn set_layout(layout: &str) {
-    let _ = Command::new("setxkbmap").arg(layout).status();
+    let _ = Command::new("setxkbmap").arg(layout).exec();
 }
