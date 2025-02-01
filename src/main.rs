@@ -10,7 +10,7 @@ use std::{
     process::Command,
 };
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn main() {
     with_query_layout(|layout| {
         set_layout(determine_new_layout(layout));
